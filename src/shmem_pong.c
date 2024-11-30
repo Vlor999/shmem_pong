@@ -7,6 +7,7 @@
  *****************************************************/
 
 #include <stdlib.h>
+#include <stdbool.h>
 #include <unistd.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -27,6 +28,7 @@ static int delta_x;
 static int delta_y;
 static int taille;
 static int couleur;
+static int** squareTab;
 
 #define handle_error(msg) \
   do { perror(msg); exit(EXIT_FAILURE); } while (0)
@@ -46,6 +48,13 @@ static void put_pixel(SDL_Surface *surface, int x, int y, uint32_t pixel)
     *(uint32_t *) p = pixel;
 }
 
+static uint32_t get_pixel(SDL_Surface *surface, int x, int y)
+{
+    int bpp = surface->format->BytesPerPixel;
+    uint8_t *p = (uint8_t *) surface->pixels + y * surface->pitch + x * bpp;
+    return *(uint32_t *) p;
+}
+
 static void draw_ball(SDL_Surface *canvas)
 {
     /* fond noir sur l'ancienne position */
@@ -55,7 +64,69 @@ static void draw_ball(SDL_Surface *canvas)
             put_pixel(canvas, x + k, y + l, noir);
 
 
+    bool collisionXDroite = false;
+    bool collisionXGauche = false;
+    bool collisionYHaut = false;
+    bool collisionYBas = false;
+    for(int i = -1; i < taille + 1; i++)
+    {
+        if(x + taille + 1 > TAILLE_X)
+        {
+            continue;
+        }
+        if(get_pixel(canvas, x + taille + 1, y + i) != 0)
+        {
+            collisionXDroite = true;
+            if(delta_x > 0)
+            {
+                delta_x *= -1;
+            }
+            break;
+        }
+        if(x - 1 < 0)
+        {
+            continue;
+        }
+        if(get_pixel(canvas, x - 1, y + i) != 0)
+        {
+            collisionXGauche = true;
+            if(delta_x < 0)
+            {
+                delta_x *= -1;
+            }
+            break;
+        }
+        if(y - 1 < 0)
+        {
+            continue;
+        }
+        if(get_pixel(canvas, x + i, y - 1) != 0)
+        {
+            collisionYHaut = true;
+            if(delta_y < 0)
+            {
+                delta_y *= -1;
+            }
+            break;
+        }
+        if(y + taille + 1 > TAILLE_Y)
+        {
+            continue;
+        }
+        if(get_pixel(canvas, x + i, y + taille + 1) != 0)
+        {
+            collisionYBas = true;
+            if(delta_y > 0)
+            {
+                delta_y *= -1;
+            }
+            break;
+        }
+    }
+
+
     /* modification de position */
+    // Si on a une collision on se décalle un peu plus
     x += delta_x;
     y += delta_y;
 
@@ -79,6 +150,7 @@ static void draw_ball(SDL_Surface *canvas)
         y = 0;
         delta_y *= -1;
     }
+
 
     /* dessin de la balle */
     for (int k = 0; k < taille; k++)
@@ -114,10 +186,11 @@ int main(int argc, char **argv)
        On initialise les caractéristiques de la balle : position initiale,
        taille, couleur. Ces valeurs sont tirées aléatoirement.
     */
-    x = random() % TAILLE_X;
+    x = random() % TAILLE_X; 
     y = random() % TAILLE_Y;
-    delta_x = random() % 5 + 1;
-    delta_y = random() % 5 + 1;
+    delta_x = random() % 5 + 1; // si positif, la balle va vers la droite ; si négatif, elle va vers la gauche
+    delta_y = random() % 5 + 1; // si positif, la balle va vers le bas ; si négatif, elle va vers le haut
+    // On commence toujours par aller vers la droite et vers le bas.
     taille = random() % 20 + 10;
     couleur =
         (random() % 256 << 16) | (random() % 256 << 8) | (random() % 255);
