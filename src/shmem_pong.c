@@ -28,7 +28,6 @@ static int delta_x;
 static int delta_y;
 static int taille;
 static int couleur;
-static int** squareTab;
 
 #define handle_error(msg) \
   do { perror(msg); exit(EXIT_FAILURE); } while (0)
@@ -38,12 +37,7 @@ static int** squareTab;
 
 static void put_pixel(SDL_Surface *surface, int x, int y, uint32_t pixel)
 {
-    /*
-      Remarque : le nombre d'octets par pixel est toujours 4 dans ce programme,
-      ce qui simplifie grandement l'écriture de put_pixel().
-     */
     int bpp = surface->format->BytesPerPixel;
-    /* p est l'adresse du pixel qu'on veut modifier. */
     uint8_t *p = (uint8_t *) surface->pixels + y * surface->pitch + x * bpp;
     *(uint32_t *) p = pixel;
 }
@@ -68,7 +62,7 @@ static void draw_ball(SDL_Surface *canvas)
     bool collisionXGauche = false;
     bool collisionYHaut = false;
     bool collisionYBas = false;
-    for(int i = -1; i < taille + 1; i++)
+    for(int i = 0; i < taille; i++)
     {
         if(x + taille + 1 > TAILLE_X)
         {
